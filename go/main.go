@@ -72,6 +72,7 @@ func main() {
 	app.Get("/statustype", getstatustype)
 	app.Get("/address", getAddress_id)
 	app.Get("/rooms", getRoomsHandler)
+
 	// JWT Middleware
 	app.Use(jwtware.New(jwtware.Config{
 		SigningKey: []byte(os.Getenv("JWT_SECRET")),
@@ -85,12 +86,10 @@ func main() {
 	app.Get("/roles", getRolesHandler)
 	app.Get("/Profile", Profile)
 	app.Put("/Profile", EditProfile) // เพิ่มการรองรับ method PUT สำหรับ /Profile
-	// app.Get("/sidebar", getUserPermissionsHandler)
+	app.Get("/amILocked", amILocked)
 
 	// Book rooms
 	app.Post("/bookRoom", bookRoomHandler)
-	//app.Post("/requestBookRoom", requestBookRoomHandler)
-	//app.Post("/generateQR/:id", generateQRHandler)
 	app.Put("/unlockRoom/:id", unlockRoomHandler)
 	app.Put("/cancelRoom/:id", cancelRoomHandler)
 
@@ -115,15 +114,22 @@ func main() {
 	// Permissions
 	permissionsGroupApi := app.Group("/permissions")
 	permissionsGroupApi.Use(checkPermissionRoles)
-	permissionsGroupApi.Get("/", getPermissionsHandler) // getźall permissions
-	permissionsGroupApi.Put("/:id", updatePermissionsHandler)
+	permissionsGroupApi.Get("/", GetPositions)
+	permissionsGroupApi.Get("/all", GetallPositions)
+	permissionsGroupApi.Post("/", AddPosition)
+	permissionsGroupApi.Put("/:id", UpdatePosition)
+	permissionsGroupApi.Delete("/:id", DeletePermision)
+
+	deleterole := app.Group("/deleterole")
+	deleterole.Use(checkPermissionRoles)
+	deleterole.Delete("/:id", DeleteRole)
 
 	// Departments
 	departmentsGroupApi := app.Group("/departments")
 	departmentsGroupApi.Use(checkPermissionDepartments)
 	departmentsGroupApi.Get("/", GetDepartments)
 	departmentsGroupApi.Post("/", AddDepartment)
-	departmentsGroupApi.Put("/:id", UpdateDepartment)
+	departmentsGroupApi.Put("/:id", UpdatePosition)
 	departmentsGroupApi.Delete("/:id", DeleteDepartment)
 
 	// Locks
@@ -145,24 +151,21 @@ func main() {
 	reportsGroupApi.Get("/usedCanceled", getReportUsedCanceledHandler)
 	reportsGroupApi.Get("/lockedEmployees", getReportLockedEmployeesHandler)
 
-
 	app.Get("/positions", GetPositions)
-//app.Post("/positions", AddPosition)
-//app.Put("/positions/:id", UpdatePosition)
-//app.Delete("/positions/:id", DeletePosition)
+	//app.Post("/positions", AddPosition)
+	//app.Put("/positions/:id", UpdatePosition)
+	//app.Delete("/positions/:id", DeletePosition)
 
-app.Get("/menus", GetAllMenus)
+	app.Get("/menus", GetAllMenus)
 
-app.Post("/positions", AddPosition)
-app.Put("/positions/:id", UpdatePosition)
-app.Delete("/positions/:id", DeletePosition)
-
-
+	app.Post("/positions", AddPosition)
+	app.Put("/positions/:id", UpdatePosition)
+	app.Delete("/positions/:id", DeletePermision)
 
 	// CronJob
-	//go CronQRStartJobs()
-	// go CronLockStartJobs()
-	// go CronCompleteStartJobs()
+	go CronQRStartJobs()
+	go CronLockStartJobs()
+	go CronCompleteStartJobs()
 
 	app.Listen(":5020")
 }

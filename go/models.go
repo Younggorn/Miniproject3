@@ -62,7 +62,6 @@ type EmployeeLocked struct {
 	DateLocked string `json:"date_locked"`
 	EmployeeID int    `json:"employee_id"`
 }
-
 type EmployeeInfo struct {
 	ID           int
 	Name         string
@@ -82,7 +81,7 @@ type SearchAddress struct {
 	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Floor    string `json:"floor"`
-	Id_floor int    `json:"idfloor`
+	Id_floor int    `json:"idfloor"`
 }
 type StatusType struct {
 	ID   int    `json:"id"`
@@ -163,4 +162,16 @@ type User struct {
 type Auth struct {
 	Email     string    `json:"email"`
 	ExpiredAt time.Time `json:"-"`
+}
+
+type reportUsed struct {
+	Used   int `json:"used"`
+	Unused int `json:"unused"`
+}
+
+type reportEmployeeLocked struct {
+	EmployeeID    int    `json:"employee_id"`
+	EmployeeName  string `json:"employee_name"`
+	EmployeeNlock int    `json:"employee_nlock"`
+	EmployeeImage string `json:"employee_image"`
 }

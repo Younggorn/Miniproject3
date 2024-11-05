@@ -2,23 +2,44 @@ package main
 
 import (
 	"fmt"
-    //"database/sql"
+	"strconv"
+
+	//"database/sql"
 	"github.com/gofiber/fiber/v2"
+	_ "github.com/sijms/go-ora/v2"
 )
 
-// Structs
-type RoleAccess struct {
-	MenuName string `json:"menu_name"`
-}
-
-// โครงสร้าง Position และ RoleAccess
+// Position โครงสร้างสำหรับข้อมูลตำแหน่ง
 type Position struct {
-	ID         int      `json:"id"`
-	Name       string   `json:"name"`
-	RoleAccess []string `json:"role_access"`  // จะเก็บชื่อของเมนูที่ตำแหน่งนี้สามารถเข้าถึงได้
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	RoleAccess string `json:"role_access"` // จะเก็บชื่อของเมนูที่ตำแหน่งนี้สามารถเข้าถึงได้
+}
+type addPosition struct {
+	ID         string `json:"id"` // เปลี่ยน ID เป็น string
+	Name       string `json:"name"`
+	RoleAccess []int  `json:"role_access"`
 }
 
 // ฟังก์ชัน GetPositions
+
+func GetallPositions(c *fiber.Ctx) error {
+	query := `
+	SELECT er.id, er.name, m.name
+	FROM employee_role er
+	JOIN permission p ON er.id = p.employee_role_id
+	JOIN menu m ON p.menu_id = m.id
+	ORDER BY er.id, m.id
+`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		fmt.Println("Error fetching positions:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch positions"})
+	}
+	return c.JSON(rows)
+
+}
 func GetPositions(c *fiber.Ctx) error {
 	query := `
 		SELECT er.id, er.name, m.name
@@ -36,43 +57,19 @@ func GetPositions(c *fiber.Ctx) error {
 	defer rows.Close()
 
 	var positions []Position
-	positionsMap := make(map[int]*Position)
 
 	for rows.Next() {
-		var positionID int
-		var positionName, menuName string
-		if err := rows.Scan(&positionID, &positionName, &menuName); err != nil {
+		var position Position
+		if err := rows.Scan(&position.ID, &position.Name, &position.RoleAccess); err != nil {
 			fmt.Println("Error scanning row:", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to scan position data"})
 		}
 
-		// ตรวจสอบว่ามีตำแหน่งอยู่ใน map หรือไม่
-		if existingPosition, ok := positionsMap[positionID]; ok {
-			// ถ้ามีอยู่แล้ว ให้เพิ่ม menuName ใน RoleAccess
-			existingPosition.RoleAccess = append(existingPosition.RoleAccess, menuName)
-		} else {
-			// ถ้าไม่มี ให้สร้างตำแหน่งใหม่แล้วเพิ่มเข้า map
-			position := Position{
-				ID:         positionID,
-				Name:       positionName,
-				RoleAccess: []string{menuName},
-			}
-			positionsMap[positionID] = &position
-			positions = append(positions, position)
-		}
+		positions = append(positions, position)
 	}
 
 	return c.JSON(positions)
 }
-
-
-
-
-
-
-
-
-
 
 // GetAllMenus: Get all available menus
 func GetAllMenus(c *fiber.Ctx) error {
@@ -100,13 +97,23 @@ func GetAllMenus(c *fiber.Ctx) error {
 
 // AddPosition ฟังก์ชันสำหรับเพิ่มตำแหน่งใหม่พร้อมสิทธิ์เมนู
 func AddPosition(c *fiber.Ctx) error {
-	var position Position
+	fmt.Println("AddPosition")
+	var position addPosition
+	// รับค่าจาก Body
 	if err := c.BodyParser(&position); err != nil {
+		fmt.Println(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Cannot parse JSON"})
 	}
 
+	// แปลง ID จาก string เป็น int
+	id, err := strconv.Atoi(position.ID)
+	if err != nil {
+		fmt.Println("Invalid ID format:", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid ID format"})
+	}
+
 	// เพิ่มตำแหน่งใหม่ใน employee_role
-	_, err := db.Exec("INSERT INTO employee_role (id, name) VALUES (:1, :2)", position.ID, position.Name)
+	_, err = db.Exec("INSERT INTO employee_role (id, name) VALUES (:1, :2)", id, position.Name)
 	if err != nil {
 		fmt.Println("Error adding position:", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add position"})
@@ -115,8 +122,8 @@ func AddPosition(c *fiber.Ctx) error {
 	// เพิ่มสิทธิ์เมนูใน permission
 	for _, menuName := range position.RoleAccess {
 		_, err = db.Exec(`
-			INSERT INTO permission (menu_id, employee_role_id)
-			VALUES ((SELECT id FROM menu WHERE name = :1), :2)`, menuName, position.ID)
+            INSERT INTO permission (menu_id, employee_role_id)
+            VALUES ((SELECT id FROM menu WHERE id = :1), :2)`, menuName, id)
 		if err != nil {
 			fmt.Println("Error adding permission:", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add permission"})
@@ -128,51 +135,78 @@ func AddPosition(c *fiber.Ctx) error {
 
 // UpdatePosition ฟังก์ชันสำหรับแก้ไขตำแหน่ง
 func UpdatePosition(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var position Position
-	if err := c.BodyParser(&position); err != nil {
+	fmt.Println("UpdatePosition")
+	id := c.Params("id") // รับ ID ของตำแหน่งที่อัปเดต
+	var payload struct {
+		PermissionIds []int `json:"permissionIds"` // รับค่าที่เป็นอาร์เรย์ของ Permission IDs
+	}
+
+	// ตรวจสอบการแปลง JSON
+	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Cannot parse JSON"})
 	}
 
-	// อัปเดตข้อมูลใน employee_role
-	_, err := db.Exec("UPDATE employee_role SET name = :1 WHERE id = :2", position.Name, id)
+	// เริ่มต้น transaction
+	tx, err := db.Begin()
 	if err != nil {
-		fmt.Println("Error updating position:", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update position"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to start transaction"})
 	}
+	defer tx.Rollback() // หากมีข้อผิดพลาด จะทำการ rollback
 
-	// ลบสิทธิ์เมนูเก่าใน permission
-	_, err = db.Exec("DELETE FROM permission WHERE employee_role_id = :1", id)
-	if err != nil {
-		fmt.Println("Error deleting old permissions:", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete old permissions"})
-	}
-
-	// เพิ่มสิทธิ์เมนูใหม่
-	for _, menuName := range position.RoleAccess {
-		_, err = db.Exec(`
-			INSERT INTO permission (menu_id, employee_role_id)
-			VALUES ((SELECT id FROM menu WHERE name = :1), :2)`, menuName, id)
+	// อัปเดต permissions ใหม่
+	for _, permissionId := range payload.PermissionIds {
+		_, err := tx.Exec(`INSERT INTO permission (employee_role_id,menu_id) VALUES (:1, :2)`, id, permissionId)
 		if err != nil {
-			fmt.Println("Error adding new permission:", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add new permissions"})
+			fmt.Println("Error updating position:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update position"})
 		}
+	}
+
+	// commit transaction
+	if err = tx.Commit(); err != nil {
+		fmt.Println("Error committing transaction:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to commit transaction"})
 	}
 
 	return c.JSON(fiber.Map{"message": "Position updated successfully"})
 }
 
-// DeletePosition ฟังก์ชันสำหรับลบตำแหน่ง
-func DeletePosition(c *fiber.Ctx) error {
+func DeleteRole(c *fiber.Ctx) error {
 	id := c.Params("id")
-	_, err := db.Exec("DELETE FROM employee_role WHERE id = :1", id)
+
+	_, err := db.Exec("UPDATE employee SET role_id = 2 WHERE role_id = :1", id)
 	if err != nil {
-		fmt.Println("Error deleting position:", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete position"})
+		fmt.Println("Error deleting permissions:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete permissions"})
+	}
+	_, err3 := db.Exec("DELETE FROM permission WHERE employee_role_id = :1 ", id)
+	if err3 != nil {
+		fmt.Println("Error permission permissions:", err3)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete permissions"})
+	}
+	_, err2 := db.Exec("DELETE FROM employee_role WHERE id = :1 ", id)
+	if err2 != nil {
+		fmt.Println("Error employee_role permissions:", err2)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete permissions"})
 	}
 
-	// ลบสิทธิ์เมนูที่เกี่ยวข้องทั้งหมด
-	_, err = db.Exec("DELETE FROM permission WHERE employee_role_id = :1", id)
+	return c.JSON(fiber.Map{"message": "DeleteRole successfully"})
+
+}
+
+// DeletePermision ฟังก์ชันสำหรับลบตำแหน่ง
+func DeletePermision(c *fiber.Ctx) error {
+	fmt.Println("DeletePosition")
+	id := c.Params("id")
+
+	// รับค่า permissions เป็น array จาก query parameter
+	permissions := c.Query("permissions")
+	fmt.Println("id :", id)
+	fmt.Printf("id type:%T\n", id)
+
+	fmt.Println("Permissions :", permissions)
+
+	_, err := db.Exec("DELETE FROM permission WHERE employee_role_id = :1 AND MENU_ID = (SELECT id FROM menu WHERE name = :2)", id, permissions)
 	if err != nil {
 		fmt.Println("Error deleting permissions:", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete permissions"})

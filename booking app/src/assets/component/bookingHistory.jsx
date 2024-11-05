@@ -20,9 +20,9 @@ const BookingCard = ({ booking, handleShowModal }) => {
       <div className="row no-gutters align-items-center">
         <div className="col-md-2 text-center">
           <img
-            src={booking.image}
+            src={booking.room}
             className="rounded-circle img-fluid mb-2"
-            alt="Room"
+           // alt="ไม่พบรูป"
             style={{ width: '80px', height: '80px' }}
           />
           <span

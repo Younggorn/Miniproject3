@@ -1,15 +1,54 @@
 -- Inserting into building
 INSERT INTO building (id, name) VALUES (1, 'Main Building');
 INSERT INTO building (id, name) VALUES (2, 'Annex Building');
+INSERT INTO building (id, name) VALUES (3, 'East Wing');
+INSERT INTO building (id, name) VALUES (4, 'West Wing');
+INSERT INTO building (id, name) VALUES (5, 'North Tower');
+INSERT INTO building (id, name) VALUES (6, 'South Tower');
+INSERT INTO building (id, name) VALUES (7, 'Conference Hall');
+INSERT INTO building (id, name) VALUES (8, 'Research Center');
+INSERT INTO building (id, name) VALUES (9, 'Innovation Lab');
+INSERT INTO building (id, name) VALUES (10, 'Learning Center');
+
+
 
 -- Inserting into floor
 INSERT INTO floor (id, name) VALUES (1, 'Ground Floor');
 INSERT INTO floor (id, name) VALUES (2, 'First Floor');
+INSERT INTO floor (id, name) VALUES (3, 'Second Floor');
+INSERT INTO floor (id, name) VALUES (4, 'Third Floor');
+INSERT INTO floor (id, name) VALUES (5, 'Fourth Floor');
+INSERT INTO floor (id, name) VALUES (6, 'Fifth Floor');
+INSERT INTO floor (id, name) VALUES (7, 'Basement 1');
+INSERT INTO floor (id, name) VALUES (8, 'Basement 2');
+INSERT INTO floor (id, name) VALUES (9, 'Penthouse Level');
+INSERT INTO floor (id, name) VALUES (10, 'Rooftop');
+
+
 
 -- Inserting into building_floor
 INSERT INTO building_floor (id, building_id, floor_id) VALUES (1, 1, 1);
 INSERT INTO building_floor (id, building_id, floor_id) VALUES (2, 1, 2);
 INSERT INTO building_floor (id, building_id, floor_id) VALUES (3, 2, 1);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (4, 1, 3);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (5, 1, 4);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (6, 2, 2);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (7, 2, 3);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (8, 2, 4);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (9, 3, 1);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (10, 3, 2);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (11, 3, 3);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (12, 3, 4);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (13, 4, 1);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (14, 4, 2);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (15, 4, 3);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (16, 5, 1);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (17, 5, 2);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (18, 5, 3);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (19, 5, 4);
+INSERT INTO building_floor (id, building_id, floor_id) VALUES (20, 6, 1);
+
+
 
 -- Inserting into employee_role
 INSERT INTO employee_role (id, name) VALUES (1, 'Manager');
@@ -62,14 +101,18 @@ INSERT INTO room_status (id, name) VALUES (1, 'ON');
 INSERT INTO room_status (id, name) VALUES (2, 'OFF');
 
 -- Inserting into room
-INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) 
-VALUES (1, 'Room A', 'Main conference room', 20, 1, 1, 1);
-INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) 
-VALUES (2, 'Room B', 'Main conference room', 20, 1, 1, 1);
-INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) 
-VALUES (3, 'VIP Room C', 'Main conference room projector', 20, 1, 2, 1);
-INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) 
-VALUES (4, 'VIP Room C', 'ไทยทดสอบ', 20, 1, 2, 1);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (1, 'Room A', 'Main conference room', 20, 1, 1, 1);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (2, 'Room B', 'Small meeting room', 10, 1, 1, 2);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (3, 'Room C', 'Workshop area', 15, 1, 2, 3);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (4, 'Room D', 'Executive meeting room', 12, 1, 1, 1);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (5, 'Room E', 'Brainstorming room', 8, 1, 2, 2);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (6, 'Room F', 'Training room', 25, 1, 1, 3);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (7, 'Room G', 'Team discussion room', 10, 1, 2, 1);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (8, 'Room H', 'Lecture room', 30, 1, 1, 2);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (9, 'Room I', 'Project room', 15, 1, 2, 3);
+INSERT INTO room (id, name, description, cap, room_status_id, room_type_id, address_id) VALUES (10, 'Room J', 'Interview room', 5, 1, 1, 1);
+
+
 
 -- Inserting into booking_status
 INSERT INTO booking_status (id, name) VALUES (1, 'Pending');
